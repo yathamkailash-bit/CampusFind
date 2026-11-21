@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="browse-shell">
+  <div class="browse-hero">
+    <div>
+      <p class="browse-eyebrow">Campus community listings</p>
+      <h2>Browse items</h2>
+      <p>Discover the latest lost and found items around campus with a clearer, faster search experience.</p>
+    </div>
+    <a class="primary-btn" href="{% url 'add_item' %}">Add an item</a>
+  </div>
+
+  <div class="browse-stats" aria-label="Item summary">
+    <div class="stat-card">
+      <span class="stat-value">{{ total_items }}</span>
+      <span class="stat-label">Items listed</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ found_count }}</span>
+      <span class="stat-label">Found</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ lost_count }}</span>
+      <span class="stat-label">Lost</span>
+    </div>
+  </div>
+
+  <div class="browse-content">
+    <aside class="filter-panel">
+      <form id="search-form" method="get" class="filter-form">
+        <div class="form-group">
+          <label for="search-input">Search</label>
+          <input id="search-input" type="text" name="q" placeholder="Search by name or keyword" value="{{ q }}">
+        </div>
+
+        <div class="form-group">
+          <label for="category-select">Category</label>
+          <select id="category-select" name="category">
+            <option value="">All categories</option>
+            {% for category in categories %}
+            <option value="{{ category.category_id }}" {% if category_id == category.category_id|stringformat:'s' %}selected{% endif %}>{{ category.category_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="status-select">Status</label>
+          <select id="status-select" name="status">
+            <option value="">All statuses</option>
+            <option value="LOST" {% if status == 'LOST' %}selected{% endif %}>Lost</option>
+            <option value="FOUND" {% if status == 'FOUND' %}selected{% endif %}>Found</option>
+            <option value="RETURNED" {% if status == 'RETURNED' %}selected{% endif %}>Returned</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="sort-select">Sort</label>
+          <select id="sort-select" name="sort">
+            <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Latest</option>
+            <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+            <option value="alphabetical" {% if sort == 'alphabetical' %}selected{% endif %}>A–Z</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button class="primary-btn" type="submit">Apply filters</button>
+          <a class="secondary-btn" href="{% url 'items_list' %}">Clear</a>
+        </div>
+      </form>
+    </aside>
+
+    <div class="results-panel">
+      <div class="results-header">
+        <div>
+          <h3>Discover items</h3>
+          <p>{{ showing_text }}</p>
+        </div>
+        {% if q or status or category_id or sort != 'recent' %}
+        <span class="chip">Filters active</span>
+        {% endif %}
+      </div>
+
+      <div class="item-grid">
+        {% for item in page_obj %}
+        <article class="item-card">
+          <div class="card-top">
+            <span class="status-badge status-{{ item.status|lower }}">{{ item.get_status_display }}</span>
+            <span class="category-chip">{{ item.category.category_name }}</span>
+          </div>
+          <h4>{{ item.name }}</h4>
+          <p class="card-description">{{ item.description|default:"No description provided yet." }}</p>
+          <div class="card-meta">
+            <span>📅 {{ item.found_date|date:"d M Y" }}</span>
+            {% if item.location %}
+            <span>📍 {{ item.location }}</span>
+            {% endif %}
+          </div>
+          <div class="card-actions">
+            <a class="secondary-btn" href="{% url 'item_detail' item.item_id %}">View details</a>
+            <a class="primary-btn" href="{% url 'submit_claim_for_item' item.item_id %}">Contact</a>
+          </div>
+        </article>
+        {% empty %}
+        <div class="empty-state">
+          <h3>No items found</h3>
+          <p>Try changing your search keywords or clearing a filter to browse everything again.</p>
+          <div class="empty-actions">
+            <a class="primary-btn" href="{% url 'items_list' %}">Browse all items</a>
+            <a class="secondary-btn" href="{% url 'submit_report' %}">Report an item</a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_other_pages %}
+      <nav class="pagination" aria-label="Pagination">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">← Previous</a>
+        {% endif %}
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Next →</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
